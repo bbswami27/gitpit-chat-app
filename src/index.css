@@ -1,0 +1,344 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --app-bg: #f0f2f5;
+    --sidebar-bg: #ffffff;
+    --header-bg: #f0f2f5;
+    --panel-bg: #ffffff;
+    --chat-bg: #efeae2;
+    --bubble-incoming: #ffffff;
+    --bubble-outgoing: #d9fdd3;
+    --text-primary: #111b21;
+    --text-secondary: #667781;
+    --accent: #00a884;
+    --accent-hover: #008f6f;
+    --border-color: #e9edef;
+    --badge-bg: #25d366;
+    --badge-text: #ffffff;
+    --shield-bg: #fef2f2;
+    --shield-border: #fca5a5;
+    --shield-text: #991b1b;
+  }
+
+  [data-theme="dark"] {
+    --app-bg: #0c1317;
+    --sidebar-bg: #111b21;
+    --header-bg: #202c33;
+    --panel-bg: #111b21;
+    --chat-bg: #0b141a;
+    --bubble-incoming: #202c33;
+    --bubble-outgoing: #005c4b;
+    --text-primary: #e9edef;
+    --text-secondary: #8696a0;
+    --accent: #00a884;
+    --accent-hover: #06cf9c;
+    --border-color: #222e35;
+    --badge-bg: #00a884;
+    --badge-text: #ffffff;
+    --shield-bg: #2e1010;
+    --shield-border: #7f1d1d;
+    --shield-text: #fca5a5;
+  }
+
+  [data-theme="classic_green"] {
+    --app-bg: #075e54;
+    --sidebar-bg: #ffffff;
+    --header-bg: #075e54;
+    --panel-bg: #ffffff;
+    --chat-bg: #e5ddd5;
+    --bubble-incoming: #ffffff;
+    --bubble-outgoing: #dcf8c6;
+    --text-primary: #121b22;
+    --text-secondary: #667781;
+    --accent: #128c7e;
+    --accent-hover: #075e54;
+    --border-color: #e0e0e0;
+    --badge-bg: #25d366;
+    --badge-text: #ffffff;
+    --shield-bg: #fff5f5;
+    --shield-border: #feb2b2;
+    --shield-text: #c53030;
+  }
+
+  [data-theme="festival_special"] {
+    --app-bg: #4a0e17;
+    --sidebar-bg: #2b080f;
+    --header-bg: #741b2b;
+    --panel-bg: #2b080f;
+    --chat-bg: #1f040a;
+    --bubble-incoming: #3d0c17;
+    --bubble-outgoing: #991b1b;
+    --text-primary: #fef08a;
+    --text-secondary: #fcd34d;
+    --accent: #f59e0b;
+    --accent-hover: #d97706;
+    --border-color: #831843;
+    --badge-bg: #f59e0b;
+    --badge-text: #000000;
+    --shield-bg: #450a0a;
+    --shield-border: #dc2626;
+    --shield-text: #fecaca;
+  }
+
+  [data-theme="cyberpunk_neon"] {
+    --app-bg: #05050e;
+    --sidebar-bg: #0c0d1c;
+    --header-bg: #13142e;
+    --panel-bg: #0c0d1c;
+    --chat-bg: #080816;
+    --bubble-incoming: #181a38;
+    --bubble-outgoing: #6b21a8;
+    --text-primary: #00ffcc;
+    --text-secondary: #ff71ce;
+    --accent: #01cdfe;
+    --accent-hover: #05ffa1;
+    --border-color: #2e1065;
+    --badge-bg: #05ffa1;
+    --badge-text: #000000;
+    --shield-bg: #3b0764;
+    --shield-border: #ec4899;
+    --shield-text: #f472b6;
+  }
+
+  [data-theme="midnight_sapphire"] {
+    --app-bg: #020617;
+    --sidebar-bg: #0f172a;
+    --header-bg: #1e293b;
+    --panel-bg: #0f172a;
+    --chat-bg: #030712;
+    --bubble-incoming: #1e293b;
+    --bubble-outgoing: #1d4ed8;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --accent: #38bdf8;
+    --accent-hover: #0284c7;
+    --border-color: #1e293b;
+    --badge-bg: #38bdf8;
+    --badge-text: #0f172a;
+    --shield-bg: #1e1b4b;
+    --shield-border: #4338ca;
+    --shield-text: #a5b4fc;
+  }
+
+  [data-theme="light_sky"] {
+    --app-bg: #f0f9ff;
+    --sidebar-bg: #ffffff;
+    --header-bg: #e0f2fe;
+    --panel-bg: #ffffff;
+    --chat-bg: #f0f9ff;
+    --bubble-incoming: #ffffff;
+    --bubble-outgoing: #bae6fd;
+    --text-primary: #0f172a;
+    --text-secondary: #0284c7;
+    --accent: #0284c7;
+    --accent-hover: #0369a1;
+    --border-color: #bae6fd;
+    --badge-bg: #0284c7;
+    --badge-text: #ffffff;
+    --shield-bg: #f0f9ff;
+    --shield-border: #7dd3fc;
+    --shield-text: #0369a1;
+  }
+
+  [data-theme="light_rose"] {
+    --app-bg: #fff1f2;
+    --sidebar-bg: #ffffff;
+    --header-bg: #ffe4e6;
+    --panel-bg: #ffffff;
+    --chat-bg: #fff1f2;
+    --bubble-incoming: #ffffff;
+    --bubble-outgoing: #fecdd3;
+    --text-primary: #1f2937;
+    --text-secondary: #e11d48;
+    --accent: #e11d48;
+    --accent-hover: #be123c;
+    --border-color: #fecdd3;
+    --badge-bg: #e11d48;
+    --badge-text: #ffffff;
+    --shield-bg: #fff1f2;
+    --shield-border: #fda4af;
+    --shield-text: #9f1239;
+  }
+
+  [data-theme="light_mint"] {
+    --app-bg: #f0fdf4;
+    --sidebar-bg: #ffffff;
+    --header-bg: #dcfce7;
+    --panel-bg: #ffffff;
+    --chat-bg: #f0fdf4;
+    --bubble-incoming: #ffffff;
+    --bubble-outgoing: #bbf7d0;
+    --text-primary: #14532d;
+    --text-secondary: #16a34a;
+    --accent: #10b981;
+    --accent-hover: #059669;
+    --border-color: #bbf7d0;
+    --badge-bg: #10b981;
+    --badge-text: #ffffff;
+    --shield-bg: #f0fdf4;
+    --shield-border: #86efac;
+    --shield-text: #166534;
+  }
+
+  [data-theme="light_amber"] {
+    --app-bg: #fffbeb;
+    --sidebar-bg: #ffffff;
+    --header-bg: #fef3c7;
+    --panel-bg: #ffffff;
+    --chat-bg: #fffbeb;
+    --bubble-incoming: #ffffff;
+    --bubble-outgoing: #fde68a;
+    --text-primary: #78350f;
+    --text-secondary: #d97706;
+    --accent: #d97706;
+    --accent-hover: #b45309;
+    --border-color: #fde68a;
+    --badge-bg: #d97706;
+    --badge-text: #ffffff;
+    --shield-bg: #fffbeb;
+    --shield-border: #fcd34d;
+    --shield-text: #92400e;
+  }
+
+  [data-theme="anime_cyberwave"] {
+    --app-bg: #1a0b2e;
+    --sidebar-bg: #11071f;
+    --header-bg: #271042;
+    --panel-bg: #11071f;
+    --chat-bg: #120324;
+    --bubble-incoming: #261138;
+    --bubble-outgoing: #701a75;
+    --text-primary: #f5d0fe;
+    --text-secondary: #f0abfc;
+    --accent: #d946ef;
+    --accent-hover: #c026d3;
+    --border-color: #581c87;
+    --badge-bg: #e879f9;
+    --badge-text: #000000;
+    --shield-bg: #4c0519;
+    --shield-border: #f43f5e;
+    --shield-text: #fecdd3;
+  }
+
+  [data-theme="gaming_rgb_matrix"] {
+    --app-bg: #030712;
+    --sidebar-bg: #090d16;
+    --header-bg: #0f172a;
+    --panel-bg: #090d16;
+    --chat-bg: #030712;
+    --bubble-incoming: #1e293b;
+    --bubble-outgoing: #047857;
+    --text-primary: #34d399;
+    --text-secondary: #60a5fa;
+    --accent: #10b981;
+    --accent-hover: #059669;
+    --border-color: #1e293b;
+    --badge-bg: #34d399;
+    --badge-text: #000000;
+    --shield-bg: #450a0a;
+    --shield-border: #ef4444;
+    --shield-text: #fca5a5;
+  }
+
+  [data-theme="pastel_dream_genz"] {
+    --app-bg: #fdf4ff;
+    --sidebar-bg: #ffffff;
+    --header-bg: #fae8ff;
+    --panel-bg: #ffffff;
+    --chat-bg: #fdf4ff;
+    --bubble-incoming: #ffffff;
+    --bubble-outgoing: #e9d5ff;
+    --text-primary: #581c87;
+    --text-secondary: #a855f7;
+    --accent: #c026d3;
+    --accent-hover: #a21caf;
+    --border-color: #f5d0fe;
+    --badge-bg: #c026d3;
+    --badge-text: #ffffff;
+    --shield-bg: #fff1f2;
+    --shield-border: #f43f5e;
+    --shield-text: #be123c;
+  }
+
+  [data-theme="pixel_retro_arcade"] {
+    --app-bg: #0f0c1b;
+    --sidebar-bg: #18142b;
+    --header-bg: #221c3d;
+    --panel-bg: #18142b;
+    --chat-bg: #0d0919;
+    --bubble-incoming: #261f47;
+    --bubble-outgoing: #b45309;
+    --text-primary: #fbbf24;
+    --text-secondary: #f59e0b;
+    --accent: #f59e0b;
+    --accent-hover: #d97706;
+    --border-color: #451a03;
+    --badge-bg: #fbbf24;
+    --badge-text: #000000;
+    --shield-bg: #450a0a;
+    --shield-border: #f87171;
+    --shield-text: #fecaca;
+  }
+
+  [data-theme="skibidi_glitch_pop"] {
+    --app-bg: #020617;
+    --sidebar-bg: #0b0f19;
+    --header-bg: #1e1b4b;
+    --panel-bg: #0b0f19;
+    --chat-bg: #020617;
+    --bubble-incoming: #1e1b4b;
+    --bubble-outgoing: #4338ca;
+    --text-primary: #818cf8;
+    --text-secondary: #a5b4fc;
+    --accent: #6366f1;
+    --accent-hover: #4f46e5;
+    --border-color: #312e81;
+    --badge-bg: #818cf8;
+    --badge-text: #000000;
+    --shield-bg: #450a0a;
+    --shield-border: #f87171;
+    --shield-text: #fecaca;
+  }
+}
+
+
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  user-select: none;
+  background-color: var(--app-bg);
+  color: var(--text-primary);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(134, 150, 160, 0.25);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(134, 150, 160, 0.45);
+}
+
+/* Hide scrollbars for tab navigation */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
