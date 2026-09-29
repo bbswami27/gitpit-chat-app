@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { 
   AiTodoTask,
   CustomNotificationConfig,
@@ -55,7 +55,7 @@ import { realtimeCloudBackend } from '../services/realtimeBackend';
 import { webrtcCallingEngine } from '../services/webrtcEngine';
 
 
-const STORAGE_KEY = 'gitpit_app_state_v5_clean_prod';
+const STORAGE_KEY = 'gitpit_app_state_v6_10_device_test';
 
 
 
@@ -240,7 +240,7 @@ const getInitialState = (): GitPitState => {
     autoDownloadSetting: 'WIFI_ONLY',
     cameraFilterEffect: 'RAW_NATURAL',
     autoAgeBasedTheme: true,
-    authModalOpen: false,
+    authModalOpen: true,
 
 
 
@@ -283,7 +283,7 @@ const getInitialState = (): GitPitState => {
       {
         id: 'ai_intro_1',
         sender: 'ai',
-        text: 'Namaste! I am your GitPit AI Assistant 🤖. You can ask me to draft emails, summarize chats, schedule 100-user meetings, explain code, or generate festive wishes.',
+        text: 'Namaste! I am your GitPit AI Assistant ðŸ¤–. You can ask me to draft emails, summarize chats, schedule 100-user meetings, explain code, or generate festive wishes.',
         time: '06:00 AM'
       }
     ],
@@ -301,7 +301,7 @@ const getInitialState = (): GitPitState => {
     newStatusModalOpen: false,
     searchQuery: '',
     chatSearchQuery: '',
-    smartReplyContext: ['Sounds great! 👍', 'Sharing location now 📍', 'Let us connect at 5 PM', 'Thanks! 🙏'],
+    smartReplyContext: ['Sounds great! ðŸ‘', 'Sharing location now ðŸ“', 'Let us connect at 5 PM', 'Thanks! ðŸ™'],
 
     // AI Child Protection Default Config (Optional based on Age / Parent Selection)
     parentalControl: {
@@ -426,7 +426,7 @@ export const useGitPitStore = () => {
           senderId: prev.currentUser.id,
           senderName: prev.currentUser.name,
           type: 'text',
-          content: '📱 Phone Number Changed: ' + prev.currentUser.name + ' updated phone number from ' + oldNum + ' to ' + newNum + '. Tap to save new number.',
+          content: 'ðŸ“± Phone Number Changed: ' + prev.currentUser.name + ' updated phone number from ' + oldNum + ' to ' + newNum + '. Tap to save new number.',
           isStarred: false,
           isEdited: false,
           sentAt: Date.now(),
@@ -444,7 +444,7 @@ export const useGitPitStore = () => {
     });
 
     triggerConfetti();
-    alert('📱 Phone Number updated to ' + newNum + '! Data preserved intact and notification broadcasted to contacts.');
+    alert('ðŸ“± Phone Number updated to ' + newNum + '! Data preserved intact and notification broadcasted to contacts.');
   };
 
   // Update Individual & Group Chat Notification Config Action
@@ -511,21 +511,21 @@ export const useGitPitStore = () => {
         return {
           isRestricted: true,
           mode: 'STRICT_ANTI_FRAUD',
-          reason: '🛡️ Stranger Shield (Strict Anti-Fraud) Active: Sender is unsaved. Calls & attachments are blocked. Only Text & Google Verified Locations allowed.'
+          reason: 'ðŸ›¡ï¸ Stranger Shield (Strict Anti-Fraud) Active: Sender is unsaved. Calls & attachments are blocked. Only Text & Google Verified Locations allowed.'
         };
       }
       if (globalState.strangerShieldMode === 'MY_CONTACTS') {
         return {
           isRestricted: true,
           mode: 'MY_CONTACTS',
-          reason: '🛡️ Stranger Shield (My Contacts Mode): Media & calls limited to verified contacts.'
+          reason: 'ðŸ›¡ï¸ Stranger Shield (My Contacts Mode): Media & calls limited to verified contacts.'
         };
       }
       if (globalState.strangerShieldMode === 'ONLY_TRUSTED') {
         return {
           isRestricted: true,
           mode: 'ONLY_TRUSTED',
-          reason: '🛡️ Stranger Shield (Only Trusted Contacts): Strict block on all non-whitelisted users.'
+          reason: 'ðŸ›¡ï¸ Stranger Shield (Only Trusted Contacts): Strict block on all non-whitelisted users.'
         };
       }
     }
@@ -553,7 +553,7 @@ export const useGitPitStore = () => {
     const perm = checkStrangerPermissions(chatId);
     if (perm.isRestricted && globalState.strangerShieldMode === 'STRICT_ANTI_FRAUD') {
       if (type !== 'text' && type !== 'location') {
-        alert('🛡️ Stranger Shield Blocked Action: Under Strict Anti-Fraud mode, unsaved contacts can only exchange Text messages and Google-verified locations.');
+        alert('ðŸ›¡ï¸ Stranger Shield Blocked Action: Under Strict Anti-Fraud mode, unsaved contacts can only exchange Text messages and Google-verified locations.');
         return;
       }
     }
@@ -575,8 +575,8 @@ export const useGitPitStore = () => {
 
       if (hasViolation) {
         isAiCensored = true;
-        censorshipReason = '🛡️ Locked by AI Child Protection: Content redacted (Applicable up to 15 years)';
-        processedContent = '🛡️ [Content Hidden by AI Child Safety Guard: Inappropriate/Abusive/Adult Content Blocked]';
+        censorshipReason = 'ðŸ›¡ï¸ Locked by AI Child Protection: Content redacted (Applicable up to 15 years)';
+        processedContent = 'ðŸ›¡ï¸ [Content Hidden by AI Child Safety Guard: Inappropriate/Abusive/Adult Content Blocked]';
 
         const newLog: AiSafetyLog = {
           id: 'log_' + Date.now(),
@@ -625,24 +625,27 @@ export const useGitPitStore = () => {
       censorshipReason,
       originalCensoredContent: isAiCensored ? content : undefined
     };
+    // 10-device test: route one-to-one messages only to the intended phone.
+    const outgoingChat = globalState.chats.find((c) => c.id === chatId);
+    const targetMemberId = outgoingChat?.type === 'individual'
+      ? outgoingChat.members.find(
+          (id) => id !== globalState.currentUser.id && id !== 'user_me'
+        )
+      : undefined;
+    const targetContact = targetMemberId
+      ? globalState.contacts.find((c) => c.id === targetMemberId)
+      : undefined;
 
-    
-    // Broadcast message to other real mobile devices in real-time!
-    realtimeCloudBackend.sendSignal({
-      type: 'MESSAGE',
-      senderPhone: globalState.currentUser.phoneNumber,
-      senderName: globalState.currentUser.name,
-      chatId,
-      payload: newMessage
-    });
-    networkSyncEngine.broadcast({
-      type: 'MESSAGE_SENT',
-      senderPhone: globalState.currentUser.phoneNumber,
-      senderName: globalState.currentUser.name,
-      chatId,
-      data: newMessage,
-      timestamp: Date.now()
-    });
+    if (targetContact?.phoneNumber) {
+      realtimeCloudBackend.sendSignal({
+        type: 'MESSAGE',
+        senderPhone: globalState.currentUser.phoneNumber,
+        senderName: globalState.currentUser.name,
+        targetPhone: targetContact.phoneNumber,
+        chatId,
+        payload: newMessage
+      });
+    }
     soundEngine.playSentPop();
 
     updateStore((prev) => {
@@ -711,7 +714,7 @@ export const useGitPitStore = () => {
 
     const diffSeconds = (Date.now() - msg.sentAt) / 1000;
     if (diffSeconds > 60) {
-      alert('⏱️ Edit Expired: Messages in GitPit can only be edited within 1 minute (60 seconds) of sending.');
+      alert('â±ï¸ Edit Expired: Messages in GitPit can only be edited within 1 minute (60 seconds) of sending.');
       return { success: false, reason: 'Edit time expired (> 60 seconds)' };
     }
 
@@ -749,7 +752,7 @@ export const useGitPitStore = () => {
       if (forEveryone) {
         updatedList = list.map((m) => 
           m.id === messageId 
-            ? { ...m, content: '🚫 This message was deleted', type: 'text', mediaUrl: undefined, locationData: undefined, upiData: undefined } 
+            ? { ...m, content: 'ðŸš« This message was deleted', type: 'text', mediaUrl: undefined, locationData: undefined, upiData: undefined } 
             : m
         );
       } else {
@@ -911,7 +914,7 @@ export const useGitPitStore = () => {
       return { contacts: syncedContacts };
     });
     triggerConfetti();
-    alert('✅ Phonebook Synced: All phone contacts have been integrated with GitPit badges!');
+    alert('âœ… Phonebook Synced: All phone contacts have been integrated with GitPit badges!');
   };
 
   
@@ -981,7 +984,7 @@ export const useGitPitStore = () => {
             senderId: prev.currentUser.id,
             senderName: prev.currentUser.name,
             type: 'text',
-            content: '👋 Hi ' + targetContact.name + '! Saved & connected on GitPit.',
+            content: 'ðŸ‘‹ Hi ' + targetContact.name + '! Saved & connected on GitPit.',
             isStarred: false,
             isEdited: false,
             sentAt: Date.now(),
@@ -995,7 +998,7 @@ export const useGitPitStore = () => {
         updatedMessages[targetChatId] = [newChat.lastMessage!];
       }
 
-      alert(`✅ Contact ${targetContact.name} (${countryCode} ${cleanPhone}) saved to GitPit Phonebook & chat opened!`);
+      alert(`âœ… Contact ${targetContact.name} (${countryCode} ${cleanPhone}) saved to GitPit Phonebook & chat opened!`);
 
       return {
         contacts: updatedContacts,
@@ -1042,7 +1045,7 @@ export const useGitPitStore = () => {
             senderId: prev.currentUser.id,
             senderName: prev.currentUser.name,
             type: 'text',
-            content: '👋 Hi ' + cnt.name + '! Synced on GitPit.',
+            content: 'ðŸ‘‹ Hi ' + cnt.name + '! Synced on GitPit.',
             isStarred: false,
             isEdited: false,
             sentAt: Date.now(),
@@ -1159,7 +1162,7 @@ export const useGitPitStore = () => {
               senderId: prev.currentUser.id,
               senderName: prev.currentUser.name,
               type: 'text',
-              content: '👋 Hi ' + cnt.name + '! Connected on GitPit via Phonebook Sync.',
+              content: 'ðŸ‘‹ Hi ' + cnt.name + '! Connected on GitPit via Phonebook Sync.',
               isStarred: false,
               isEdited: false,
               sentAt: Date.now(),
@@ -1175,8 +1178,8 @@ export const useGitPitStore = () => {
       });
 
       const messageText = importedDeviceContacts.length > 0
-        ? `⚡ Device Phonebook Sync Successful! ${importedDeviceContacts.length} native device numbers imported & ${updatedContacts.length} active 1-on-1 chats ready on main panel.`
-        : `⚡ Phonebook Sync Successful! ${updatedContacts.length} real numbers verified & active 1-on-1 chats synced on GitPit main panel.`;
+        ? `âš¡ Device Phonebook Sync Successful! ${importedDeviceContacts.length} native device numbers imported & ${updatedContacts.length} active 1-on-1 chats ready on main panel.`
+        : `âš¡ Phonebook Sync Successful! ${updatedContacts.length} real numbers verified & active 1-on-1 chats synced on GitPit main panel.`;
 
       alert(messageText);
 
@@ -1279,7 +1282,7 @@ export const useGitPitStore = () => {
       };
     });
 
-    alert('🧹 Selected chat histories have been cleared successfully.');
+    alert('ðŸ§¹ Selected chat histories have been cleared successfully.');
   };
 
   // Theme Setter
@@ -1361,7 +1364,7 @@ export const useGitPitStore = () => {
   const startCall = (contact: Contact, type: 'audio' | 'video') => {
     // Check Stranger Shield on calls
     if (contact.isStranger && globalState.strangerShieldMode === 'STRICT_ANTI_FRAUD') {
-      alert('🛡️ Stranger Shield Blocked: Calls with unsaved numbers are blocked in Strict Anti-Fraud mode. Save contact first or adjust settings.');
+      alert('ðŸ›¡ï¸ Stranger Shield Blocked: Calls with unsaved numbers are blocked in Strict Anti-Fraud mode. Save contact first or adjust settings.');
       return;
     }
 
@@ -1392,21 +1395,34 @@ export const useGitPitStore = () => {
       }
     }));
 
-    // Auto connect or wait for response
-    setTimeout(() => {
-      soundEngine.stopRingtone();
-      updateStore((prev) => {
-        if (prev.activeCall && prev.activeCall.status === 'ringing') {
-          return {
-            activeCall: {
-              ...prev.activeCall,
-              status: 'connected'
-            }
-          };
+    // Wait for CALL_ACCEPTED from the target test phone.
+  };
+
+  const acceptIncomingCall = () => {
+    const current = globalState.activeCall;
+    if (!current || current.direction !== 'incoming') return;
+
+    soundEngine.stopRingtone();
+
+    networkSyncEngine.broadcast({
+      type: 'CALL_ACCEPTED',
+      senderPhone: globalState.currentUser.phoneNumber,
+      senderName: globalState.currentUser.name,
+      targetPhone: current.contact.phoneNumber,
+      chatId: current.contact.id,
+      data: { callType: current.type },
+      timestamp: Date.now()
+    });
+
+    updateStore((prev) => {
+      if (!prev.activeCall) return {};
+      return {
+        activeCall: {
+          ...prev.activeCall,
+          status: 'connected'
         }
-        return {};
-      });
-    }, 3500);
+      };
+    });
   };
 
   const endCall = () => {
@@ -1572,13 +1588,13 @@ export const useGitPitStore = () => {
       const lower = prompt.toLowerCase();
 
       if (lower.includes('meeting') || lower.includes('agenda')) {
-        replyText = "📅 GitPit Meeting Assistant: I can help you schedule a 100-user meeting room with screen sharing. Make sure to set your agenda and alarm!";
+        replyText = "ðŸ“… GitPit Meeting Assistant: I can help you schedule a 100-user meeting room with screen sharing. Make sure to set your agenda and alarm!";
       } else if (lower.includes('stranger') || lower.includes('shield') || lower.includes('fraud')) {
-        replyText = "🛡️ Stranger Shield Guide: Strict Anti-Fraud mode restricts unknown contacts to text & Google-verified map pins only. No voice notes or attachments can enter your inbox without permission.";
+        replyText = "ðŸ›¡ï¸ Stranger Shield Guide: Strict Anti-Fraud mode restricts unknown contacts to text & Google-verified map pins only. No voice notes or attachments can enter your inbox without permission.";
       } else if (lower.includes('birthday') || lower.includes('anniversary') || lower.includes('wish')) {
-        replyText = "🎉 AI Reminder: Aarav Sharma's birthday is coming up on Aug 25! Suggested wish: 'Wishing you a very Happy Birthday Aarav! May this year bring massive success and great health! 🎂✨'";
+        replyText = "ðŸŽ‰ AI Reminder: Aarav Sharma's birthday is coming up on Aug 25! Suggested wish: 'Wishing you a very Happy Birthday Aarav! May this year bring massive success and great health! ðŸŽ‚âœ¨'";
       } else if (lower.includes('memo') || lower.includes('email')) {
-        replyText = "📝 GitPit Memo Drafter: Created Urgent Memo draft for team review. Would you like me to flag follow-ups for Friday?";
+        replyText = "ðŸ“ GitPit Memo Drafter: Created Urgent Memo draft for team review. Would you like me to flag follow-ups for Friday?";
       }
 
       const aiReply = {
@@ -1629,7 +1645,7 @@ export const useGitPitStore = () => {
       sendMessage({
         chatId: globalState.activeChatId,
         type: 'upi_payment',
-        content: `UPI Payment of ₹${payload.amount} sent to ${payload.payeeName}`,
+        content: `UPI Payment of â‚¹${payload.amount} sent to ${payload.payeeName}`,
         upiData: upiPayload
       });
     }
@@ -1655,7 +1671,7 @@ export const useGitPitStore = () => {
   const toggleParentalControl = (pin: string, enable: boolean) => {
     if (pin !== globalState.parentalControl.parentPin) {
       soundEngine.playClick();
-      alert('❌ Incorrect Parental Master PIN! Default PIN is: 9999');
+      alert('âŒ Incorrect Parental Master PIN! Default PIN is: 9999');
       return false;
     }
 
@@ -1667,7 +1683,7 @@ export const useGitPitStore = () => {
     }));
 
     triggerConfetti();
-    alert(enable ? '🛡️ AI Child Protection Shield Activated! Adult/abusive material is now locked.' : '🔓 Parental Control Deactivated.');
+    alert(enable ? 'ðŸ›¡ï¸ AI Child Protection Shield Activated! Adult/abusive material is now locked.' : 'ðŸ”“ Parental Control Deactivated.');
     return true;
   };
 
@@ -1719,6 +1735,7 @@ export const useGitPitStore = () => {
     setStrangerShieldMode,
     updateUserProfile,
     startCall,
+    acceptIncomingCall,
     endCall,
     toggleCallMute,
     toggleCallCamera,

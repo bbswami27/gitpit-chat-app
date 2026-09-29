@@ -1,6 +1,7 @@
-/**
- * GitPit Real-Time Production Cloud Signaling Engine
- * Connects physical devices across 4G/5G/Wi-Fi for Real Messages, WebRTC Calls & Contact Sync
+﻿/**
+ * GitPit real-time cloud relay client.
+ * Test mode: fixed OTP remains handled by PhoneAuthModal.
+ * One-to-one messages are routed by the target 10-digit phone number.
  */
 
 export interface RealtimeSignal {
@@ -14,107 +15,133 @@ export interface RealtimeSignal {
   timestamp: number;
 }
 
+const RENDER_SIGNAL_ENDPOINT = 'https://gitpit-chat-app.onrender.com/api/signal';
+
 class RealtimeCloudBackend {
   private listeners: ((signal: RealtimeSignal) => void)[] = [];
-  private myPhone: string = '';
-  private pollInterval: any = null;
-  private lastTimestamp: number = Date.now() - 10000;
-
-  // Cloud Gateway Endpoint (Fallback to Vite Dev Server / Cloud Relay)
-  private cloudEndpoint: string = '';
+  private myPhone = '';
+  private pollInterval: ReturnType<typeof setInterval> | null = null;
+  private lastTimestamp = Date.now() - 10000;
+  private cloudEndpoint = '';
 
   constructor() {
     this.initCloudEndpoint();
   }
 
   private initCloudEndpoint() {
-    if (typeof window !== 'undefined') {
-      const host = window.location.hostname || '192.168.29.100';
-      const port = window.location.port || '5173';
-      const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-      this.cloudEndpoint = `${protocol}//${host}:${port}/api/signal`;
-    }
+    if (typeof window === 'undefined') return;
+
+    const host = window.location.hostname;
+    const protocol = window.location.protocol;
+    const isViteDev =
+      (host === 'localhost' || host === '127.0.0.1') &&
+      window.location.port === '5173';
+
+    const isNativeShell =
+      protocol === 'capacitor:' ||
+      protocol === 'ionic:' ||
+      ((host === 'localhost' || host === '127.0.0.1') && !isViteDev);
+
+    this.cloudEndpoint = isNativeShell
+      ? RENDER_SIGNAL_ENDPOINT
+      : `${window.location.origin}/api/signal`;
   }
 
   public setUserPhone(phone: string) {
-    this.myPhone = phone ? phone.replace(/\D/g, '').slice(-10) : '';
+    const nextPhone = phone ? phone.replace(/\D/g, '').slice(-10) : '';
+
+    if (nextPhone !== this.myPhone) {
+      this.lastTimestamp = Date.now() - 2000;
+    }
+
+    this.myPhone = nextPhone;
     this.startPolling();
   }
 
   public subscribe(callback: (signal: RealtimeSignal) => void) {
     this.listeners.push(callback);
     return () => {
-      this.listeners = this.listeners.filter((l) => l !== callback);
+      this.listeners = this.listeners.filter((listener) => listener !== callback);
     };
   }
 
   private notifyListeners(signal: RealtimeSignal) {
-    this.listeners.forEach((l) => {
+    for (const listener of this.listeners) {
       try {
-        l(signal);
-      } catch (e) {
-        console.error('Error in signal listener:', e);
+        listener(signal);
+      } catch (error) {
+        console.error('GitPit signal listener error:', error);
       }
-    });
+    }
   }
 
-  /**
-   * Broadcast message / WebRTC signal to cloud backend
-   */
-  public async sendSignal(signal: Omit<RealtimeSignal, 'id' | 'timestamp'>): Promise<boolean> {
+  public async sendSignal(
+    signal: Omit<RealtimeSignal, 'id' | 'timestamp'>
+  ): Promise<boolean> {
+    if (!this.cloudEndpoint) return false;
+
     const fullSignal: RealtimeSignal = {
       ...signal,
-      id: 'sig_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+      id: `sig_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       timestamp: Date.now()
     };
 
     try {
-      if (this.cloudEndpoint) {
-        await fetch(this.cloudEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(fullSignal)
-        });
-      }
-      return true;
-    } catch (e) {
-      console.warn('Cloud signal send error:', e);
+      const response = await fetch(this.cloudEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fullSignal)
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.warn('GitPit cloud signal send error:', error);
       return false;
     }
   }
 
-  /**
-   * Continuous real-time signal poller
-   */
   private startPolling() {
-    if (this.pollInterval) clearInterval(this.pollInterval);
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+      this.pollInterval = null;
+    }
+
+    if (!this.myPhone || !this.cloudEndpoint) return;
 
     this.pollInterval = setInterval(async () => {
-      if (!this.cloudEndpoint || !this.myPhone) return;
-
       try {
-        const url = `${this.cloudEndpoint}?since=${this.lastTimestamp}&phone=${this.myPhone}`;
-        const res = await fetch(url);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.signals && Array.isArray(data.signals)) {
-            data.signals.forEach((sig: RealtimeSignal) => {
-              if (sig.timestamp > this.lastTimestamp) {
-                this.lastTimestamp = sig.timestamp;
-              }
-              // Ignore own signals
-              const senderClean = sig.senderPhone ? sig.senderPhone.replace(/\D/g, '').slice(-10) : '';
-              if (senderClean !== this.myPhone) {
-                this.notifyListeners(sig);
-              }
-            });
+        const url =
+          `${this.cloudEndpoint}?since=${this.lastTimestamp}` +
+          `&phone=${encodeURIComponent(this.myPhone)}`;
+
+        const response = await fetch(url, { cache: 'no-store' });
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (!Array.isArray(data.signals)) return;
+
+        for (const signal of data.signals as RealtimeSignal[]) {
+          if (
+            typeof signal.timestamp === 'number' &&
+            signal.timestamp > this.lastTimestamp
+          ) {
+            this.lastTimestamp = signal.timestamp;
+          }
+
+          const senderPhone = signal.senderPhone
+            ? signal.senderPhone.replace(/\D/g, '').slice(-10)
+            : '';
+
+          if (senderPhone && senderPhone !== this.myPhone) {
+            this.notifyListeners(signal);
           }
         }
-      } catch (e) {
-        // Silent retry
+      } catch {
+        // Retry silently on the next polling cycle.
       }
     }, 1000);
   }
 }
 
 export const realtimeCloudBackend = new RealtimeCloudBackend();
+

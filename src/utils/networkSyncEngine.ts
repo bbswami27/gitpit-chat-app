@@ -1,7 +1,13 @@
-import { Message, Chat, Contact } from '../types';
-import { soundEngine } from './soundEffects';
+﻿import { Message, Chat, Contact } from '../types';
 
-type SyncPayloadType = 'MESSAGE_SENT' | 'CONTACT_ADDED' | 'CALL_INITIATED' | 'CALL_ACCEPTED' | 'CALL_ENDED' | 'REACTION_ADDED' | 'TYPING_STATUS';
+type SyncPayloadType =
+  | 'MESSAGE_SENT'
+  | 'CONTACT_ADDED'
+  | 'CALL_INITIATED'
+  | 'CALL_ACCEPTED'
+  | 'CALL_ENDED'
+  | 'REACTION_ADDED'
+  | 'TYPING_STATUS';
 
 export interface SyncPayload {
   type: SyncPayloadType;
@@ -13,116 +19,179 @@ export interface SyncPayload {
   timestamp: number;
 }
 
+const RENDER_SIGNAL_ENDPOINT = 'https://gitpit-chat-app.onrender.com/api/signal';
+
 class NetworkSyncEngine {
   private channel: BroadcastChannel | null = null;
   private listeners: ((payload: SyncPayload) => void)[] = [];
-  private lastPolledTimestamp: number = Date.now() - 5000;
-  private myPhone: string = '';
+  private lastPolledTimestamp = Date.now() - 5000;
+  private myPhone = '';
+  private pollTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
       try {
-        this.channel = new BroadcastChannel('gitpit_realtime_network_channel_v1');
+        this.channel = new BroadcastChannel('gitpit_realtime_network_channel_v2');
         this.channel.onmessage = (event) => {
           this.handleIncomingPayload(event.data);
         };
-      } catch (e) {
-        console.warn('BroadcastChannel error', e);
+      } catch (error) {
+        console.warn('BroadcastChannel error', error);
       }
     }
+  }
 
-    // Start HTTP Signaling Poller for cross-device communication
-    this.startHttpSignalingPoller();
+  private getSignalEndpoint() {
+    if (typeof window === 'undefined') return RENDER_SIGNAL_ENDPOINT;
+
+    const host = window.location.hostname;
+    const protocol = window.location.protocol;
+    const isViteDev =
+      (host === 'localhost' || host === '127.0.0.1') &&
+      window.location.port === '5173';
+
+    const isNativeShell =
+      protocol === 'capacitor:' ||
+      protocol === 'ionic:' ||
+      ((host === 'localhost' || host === '127.0.0.1') && !isViteDev);
+
+    return isNativeShell
+      ? RENDER_SIGNAL_ENDPOINT
+      : `${window.location.origin}/api/signal`;
   }
 
   public setMyPhoneNumber(phone: string) {
-    this.myPhone = phone ? phone.replace(/\D/g, '').slice(-10) : '';
+    const nextPhone = phone ? phone.replace(/\D/g, '').slice(-10) : '';
+
+    if (nextPhone !== this.myPhone) {
+      this.lastPolledTimestamp = Date.now() - 2000;
+    }
+
+    this.myPhone = nextPhone;
+    this.startHttpSignalingPoller();
   }
 
   private startHttpSignalingPoller() {
-    if (typeof window === 'undefined') return;
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    }
 
-    setInterval(async () => {
+    if (typeof window === 'undefined' || !this.myPhone) return;
+
+    this.pollTimer = setInterval(async () => {
       try {
-        const host = window.location.hostname || '192.168.29.100';
-        const url = `http://${host}:5173/api/signal?since=${this.lastPolledTimestamp}&phone=${this.myPhone}`;
-        const res = await fetch(url);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.signals && data.signals.length > 0) {
-            data.signals.forEach((sig: SyncPayload) => {
-              if (sig.timestamp > this.lastPolledTimestamp) {
-                this.lastPolledTimestamp = sig.timestamp;
-              }
-              this.handleIncomingPayload(sig);
-            });
+        const endpoint = this.getSignalEndpoint();
+        const url =
+          `${endpoint}?since=${this.lastPolledTimestamp}` +
+          `&phone=${encodeURIComponent(this.myPhone)}`;
+
+        const response = await fetch(url, { cache: 'no-store' });
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (!Array.isArray(data.signals)) return;
+
+        for (const signal of data.signals as SyncPayload[]) {
+          if (
+            typeof signal.timestamp === 'number' &&
+            signal.timestamp > this.lastPolledTimestamp
+          ) {
+            this.lastPolledTimestamp = signal.timestamp;
+          }
+
+          if (
+            signal.type === 'CALL_INITIATED' ||
+            signal.type === 'CALL_ACCEPTED' ||
+            signal.type === 'CALL_ENDED'
+          ) {
+            this.handleIncomingPayload(signal);
           }
         }
-      } catch (e) {
-        // Silent network fallback
+      } catch {
+        // Retry after a network change.
       }
     }, 1200);
   }
 
   private handleIncomingPayload(payload: SyncPayload) {
     if (!payload || !payload.type) return;
-    this.listeners.forEach((listener) => {
+
+    const senderPhone = payload.senderPhone
+      ? payload.senderPhone.replace(/\D/g, '').slice(-10)
+      : '';
+
+    if (this.myPhone && senderPhone === this.myPhone) return;
+
+    for (const listener of this.listeners) {
       try {
         listener(payload);
-      } catch (e) {
-        console.error('Error in sync listener', e);
+      } catch (error) {
+        console.error('Network sync listener error', error);
       }
-    });
+    }
   }
 
   public subscribe(listener: (payload: SyncPayload) => void) {
     this.listeners.push(listener);
     return () => {
-      this.listeners = this.listeners.filter((l) => l !== listener);
+      this.listeners = this.listeners.filter((item) => item !== listener);
     };
   }
 
   public async broadcast(payload: SyncPayload) {
-    // 1. BroadcastChannel local tab/window sync
     if (this.channel) {
       try {
         this.channel.postMessage(payload);
-      } catch (e) {}
+      } catch {}
     }
 
-    // 2. HTTP Signal Server Post for Cross-Device Real Phones
     try {
-      const host = typeof window !== 'undefined' ? window.location.hostname : '192.168.29.100';
-      await fetch(`http://${host}:5173/api/signal`, {
+      await fetch(this.getSignalEndpoint(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-    } catch (e) {
-      console.warn('Signal POST error', e);
+    } catch (error) {
+      console.warn('GitPit signal POST error', error);
     }
   }
 
-  public async pickNativeDeviceContact(): Promise<{ name: string; phoneNumber: string } | null> {
-    if (typeof window !== 'undefined' && 'contacts' in navigator && 'select' in (navigator as any).contacts) {
+  public async pickNativeDeviceContact(): Promise<{
+    name: string;
+    phoneNumber: string;
+  } | null> {
+    if (
+      typeof window !== 'undefined' &&
+      'contacts' in navigator &&
+      'select' in (navigator as any).contacts
+    ) {
       try {
         const props = ['name', 'tel'];
         const opts = { multiple: false };
         const contacts = await (navigator as any).contacts.select(props, opts);
+
         if (contacts && contacts.length > 0) {
-          const c = contacts[0];
-          const name = c.name && c.name[0] ? c.name[0] : 'Saved Contact';
-          const tel = c.tel && c.tel[0] ? c.tel[0].replace(/\D/g, '') : '';
-          if (tel) {
-            return { name, phoneNumber: tel.slice(-10) };
+          const contact = contacts[0];
+          const name =
+            contact.name && contact.name[0] ? contact.name[0] : 'Saved Contact';
+          const phone =
+            contact.tel && contact.tel[0]
+              ? contact.tel[0].replace(/\D/g, '')
+              : '';
+
+          if (phone) {
+            return { name, phoneNumber: phone.slice(-10) };
           }
         }
-      } catch (e) {
-        console.warn('Native Contacts Picker cancelled', e);
+      } catch (error) {
+        console.warn('Native Contacts Picker cancelled', error);
       }
     }
+
     return null;
   }
 }
 
 export const networkSyncEngine = new NetworkSyncEngine();
+
